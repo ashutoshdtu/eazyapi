@@ -174,14 +174,32 @@ def docs(c, serve=False, open_browser=False):
         _run(c, f"poetry run watchmedo shell-command -p '*.rst;*.md' -c '{build_docs}' -R -D .")
 
 
+@task()
+def version(c):
+    # type: (Context) -> None
+    """Print project version."""
+    _run(c, "poetry run cz version -p")
+
+
 @task(
     help={
-        "part": "Part of the version to be bumped.",
         "dry_run": "Don't write any files, just pretend. (default: False)",
     }
 )
-def version(c, part, dry_run=False):
-    # type: (Context, str, bool) -> None
+def bump(c, dry_run=False):
+    # type: (Context, bool) -> None
     """Bump version."""
     bump_options = ["--dry-run"] if dry_run else []
-    _run(c, f"poetry run bump2version {' '.join(bump_options)} {part}")
+    _run(c, f"poetry run cz bump -s {' '.join(bump_options)}")
+
+
+@task(
+    help={
+        "dry_run": "Don't write any files, just pretend. (default: False)",
+    }
+)
+def commit(c, dry_run=False):
+    # type: (Context, bool) -> None
+    """Git commit enhanced with commitizen."""
+    bump_options = ["--dry-run"] if dry_run else []
+    _run(c, f"poetry run cz commit --signoff {' '.join(bump_options)}")
