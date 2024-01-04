@@ -161,8 +161,7 @@ version_provider = "poetry"
 update_changelog_on_bump = true
 major_version_zero = true
 version_files = [
-    "src/eazyapi/__init__.py",
-    "pyproject.toml:version"
+    "src/eazyapi/__init__.py"
 ]
 
 [build-system]
