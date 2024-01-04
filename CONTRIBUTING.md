@@ -66,8 +66,9 @@ Please follow these steps to have your contribution considered by the maintainer
 2. Add tests for the new changes
 3. Edit documentation if you have changed something significant
 4. Make sure to follow the [styleguides](#styleguides)
-5. Open a PR in our repository and follow the PR template so that we can efficiently review the changes
-6. After you submit your pull request, verify that all status checks are passing
+5. Use `cz commit -s` instead of `git commit` to commit your changes
+6. Open a PR in our repository and follow the PR template so that we can efficiently review the changes
+7. After you submit your pull request, verify that all status checks are passing
 
 While the prerequisites above must be satisfied prior to having your pull request reviewed, the reviewer(s) may ask you to complete additional design
 work, tests, or other changes before your pull request can be ultimately accepted.
