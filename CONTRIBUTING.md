@@ -21,6 +21,16 @@ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-
 
 We'll also need `nox` for automated testing in multiple Python environments so [install that too](https://nox.thea.codes/en/stable/).
 
+```
+pip install --user --upgrade nox
+```
+
+We use `commitizen` for better commit messages, CHANGELOG generation and version bumps. To install:
+
+```
+pip install --user -U Commitizen
+```
+
 To install the local development requirements inside a virtual environment run:
 
 ```
@@ -32,7 +42,7 @@ $ poetry run inv install-hooks
 
 We use [invoke](http://www.pyinvoke.org/) to wrap up some useful tasks like formatting, linting, testing and more.
 
-Execute `inv[oke] --list` to see the list of available commands.
+Execute `poetry run inv[oke] --list` to see the list of available commands.
 
 ## Contributing
 
