@@ -25,7 +25,7 @@ We'll also need `nox` for automated testing in multiple Python environments so [
 pip install --user --upgrade nox
 ```
 
-We use `commitizen` for better commit messages, CHANGELOG generation and version bumps. To install:
+We use [`commitizen`](https://commitizen-tools.github.io/) for better commit messages, CHANGELOG generation and version bumps. To install:
 
 ```
 pip install --user -U Commitizen
@@ -72,6 +72,16 @@ Please follow these steps to have your contribution considered by the maintainer
 
 While the prerequisites above must be satisfied prior to having your pull request reviewed, the reviewer(s) may ask you to complete additional design
 work, tests, or other changes before your pull request can be ultimately accepted.
+
+### Commit Messages
+
+We use [`commitizen`](https://commitizen-tools.github.io/) and follow the [Conventional Commits](https://www.conventionalcommits.org/) and [Semantic Versioning](https://semver.org/) guidelines for our commits. Here are some recommendations for writing commit messages:
+
+- **Keep the message short**: Makes the list of commits more readable (~50 chars).
+- **Talk imperative**: Follow this rule: `If applied, this commit will <commit message>`
+- **Think about the CHANGELOG**: Your commits will probably end up in the changelog so try writing for it, but also keep in mind that you can skip sending commits to the CHANGELOG by using different keywords (like build).
+- **Use a commit per new feature**: if you introduce multiple things related to the same commit, squash them. This is useful for auto-generating CHANGELOG.
+
 
 ## Styleguides
 
