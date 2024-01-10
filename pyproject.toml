@@ -38,6 +38,7 @@ eazyapi = 'eazyapi.cli:main'
 python = "<3.12,>=3.8"
 
 click = "^8.1.7"
+pydantic = {extras = ["email"], version = "^2.5.3"}
 
 
 [tool.poetry.group.dev.dependencies]
