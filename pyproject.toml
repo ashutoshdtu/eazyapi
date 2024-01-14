@@ -134,7 +134,7 @@ pycodestyle = ["+*"]
 mccabe = ["+*"]
 flake8-annotations = ["+*", "-ANN1??", "-ANN401"]
 flake8-docstrings = ["+*", "-D212"]
-"flake8-*" = ["+*"]
+"flake8-*" = ["+*", "-B902"]
 pylint = ["-C????", "-E????", "+F????", "+I????", "-R????", "-W????"]
 
 [tool.flakeheaven.exceptions."tests/"]
