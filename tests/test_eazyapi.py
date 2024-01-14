@@ -2,10 +2,9 @@
 from typing import Generator
 
 import pytest
+import toml
 
 import eazyapi
-
-__version__ = "0.1.1"
 
 
 @pytest.fixture
@@ -15,5 +14,11 @@ def version() -> Generator[str, None, None]:
 
 
 def test_version(version: str) -> None:
-    """Sample pytest test function with the pytest fixture as an argument."""
-    assert version == __version__
+    """Test whether version in eazyapi.__version__ is the same as in pyproject.toml."""
+    # Load the pyproject.toml file
+    pyproject = toml.load("pyproject.toml")
+
+    # Get the version number from the [tool.poetry] section
+    expected_version = pyproject["tool"]["poetry"]["version"]
+
+    assert version == expected_version
