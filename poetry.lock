@@ -2516,4 +2516,4 @@ pgsql = ["asyncpg", "tortoise-orm"]
 [metadata]
 lock-version = "2.0"
 python-versions = "<3.12,>=3.8"
-content-hash = "32a697a9f4ac2a4bfb1c16220285b83043ddad5e28cc960e866602a63eb5f642"
+content-hash = "79323415ee9a35d021e9dc2b13d49c0b42b9f8ee5ac876876a519e5c69d1488f"
