@@ -40,7 +40,7 @@ def coverage(session: Session) -> None:
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
     session.install(".[pgsql]")
-    session.install("invoke", "mypy")
+    session.install("invoke", "mypy", "toml", "types-toml")
     session.run("inv", "mypy")
 
 
