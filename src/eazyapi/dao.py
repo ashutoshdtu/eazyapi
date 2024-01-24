@@ -60,7 +60,7 @@ class BaseDAO(BaseModel, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def close(self) -> None:
+    async def close(self) -> None:
         """
         Closes the connections to the database.
 
@@ -176,27 +176,27 @@ class BaseDAO(BaseModel, ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    async def update_or_create(
-        self, model_name: str, defaults: Dict[str, Any], update: Dict[str, Any]
-    ) -> Any:
-        """
-        Updates a record if it exists, else creates it.
+    # @abstractmethod
+    # async def update_or_create(
+    #     self, model_name: str, defaults: Dict[str, Any], update: Dict[str, Any]
+    # ) -> Any:
+    #     """
+    #     Updates a record if it exists, else creates it.
 
-        Args:
-            model_name: Name of the model.
-            defaults: Fields and their values for the new record (if creation happens).
-            update: Fields and their new values (if update happens).
+    #     Args:
+    #         model_name: Name of the model.
+    #         defaults: Fields and their values for the new record (if creation happens).
+    #         update: Fields and their new values (if update happens).
 
-        Returns:
-            The updated or created record.
+    #     Returns:
+    #         The updated or created record.
 
-        Raises:
-            DatabaseOperationError: If the operation fails due to database issues.
-            ValidationError: If the provided data doesn't match the expected format.
-            InvalidQueryError: If the query is not formed correctly.
-        """
-        raise NotImplementedError
+    #     Raises:
+    #         DatabaseOperationError: If the operation fails due to database issues.
+    #         ValidationError: If the provided data doesn't match the expected format.
+    #         InvalidQueryError: If the query is not formed correctly.
+    #     """
+    #     raise NotImplementedError
 
     @abstractmethod
     async def delete(self, model_name: str, _id: int) -> None:
@@ -381,7 +381,9 @@ class BaseDAO(BaseModel, ABC):
         """
 
         def is_valid_column_name(name: str) -> bool:
-            return bool(re.match(r"^-?[a-zA-Z_][a-zA-Z0-9_]*$", name))
+            # return bool(re.match(r"^-?[a-zA-Z_][a-zA-Z0-9_]*$", name))
+            # Support subkeys in columns as well with dot(.) eg. "employee.name"
+            return bool(re.match(r"^-?[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)*$", name))
 
         if isinstance(sort, str):
             sort_fields = sort.split(",")
@@ -437,10 +439,11 @@ class SQLDAO(BaseDAO):
 
     model_config = ConfigDict(extra="ignore")
 
-    tortoise_config: Dict = None
+    tortoise_config: Dict = {}
 
     @model_validator(mode="before")
-    def prepare_tortoise_config(self) -> "SQLDAO":
+    @classmethod
+    def prepare_tortoise_config(cls, data: Any) -> Any:
         """
         Prepares the configuration for Tortoise ORM.
 
@@ -452,24 +455,28 @@ class SQLDAO(BaseDAO):
         Note: The function uses the 'model_validator' decorator, which validates the models
         before they are used in the function.
 
+        Args:
+            data: data passed to constructor.
+
         Returns:
-            SQLDAO: Returns the instance of the SQL Data Access Object (DAO) with updated
+            Any: Returns the instance of the SQL Data Access Object (DAO) with updated
             tortoise configuration.
         """
-        config = self["config"]
-        if config and "tortoise_config" not in self:
-            tortoise_config = {
-                "connections": {"master": config.uri, "slave": config.uri},
-                "apps": {
-                    config.database: {
-                        "models": config.models,
-                        "default_connection": "master",
-                    }
-                },
-                "routers": ["eazyapi.dao.TortoiseDefaultRouter"],
-            }
-            self["tortoise_config"] = tortoise_config
-        return self
+        if isinstance(data, dict):
+            config = data["config"]
+            if config and "tortoise_config" not in data:
+                tortoise_config = {
+                    "connections": {"master": config.uri, "slave": config.uri},
+                    "apps": {
+                        config.database: {
+                            "models": config.models,
+                            "default_connection": "master",
+                        }
+                    },
+                    "routers": ["eazyapi.dao.TortoiseDefaultRouter"],
+                }
+                data["tortoise_config"] = tortoise_config
+        return data
 
     @property
     def connections(self) -> Any:
@@ -493,23 +500,23 @@ class SQLDAO(BaseDAO):
         except Exception as e:
             raise DatabaseConnectionError(f"Failed to close connection: {str(e)}")
 
-    async def get_by_id(self, model_name: str, _id: int) -> Dict:  # noqa: D102
+    async def get_by_id(self, model_name: str, _id: int) -> Any:  # noqa: D102
         # TESTED: ❌
         ModelClass = self._get_model(model_name)
         try:
             obj = await ModelClass.get(_id=_id)
-            return obj.to_dict() if obj else None
+            return obj
         except DoesNotExist:
             raise RecordNotFoundError("Record not found")
         except Exception as e:
             raise DatabaseOperationError(f"Failed to fetch record: {str(e)}")
 
-    async def get_by_field(self, model_name: str, field: str, value: Any) -> Dict:  # noqa: D102
+    async def get_by_field(self, model_name: str, field: str, value: Any) -> Any:  # noqa: D102
         # TESTED: ❌
         ModelClass = self._get_model(model_name)
         try:
             obj = await ModelClass.get(**{field: value})
-            return obj.to_dict() if obj else None
+            return obj
         except DoesNotExist:
             raise RecordNotFoundError("Record not found")
         except Exception as e:
@@ -522,7 +529,7 @@ class SQLDAO(BaseDAO):
         sort: Optional[Union[str, Dict[str, int], List[Tuple[str, int]]]] = None,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
-    ) -> List[Dict]:
+    ) -> List[Any]:
         # TESTED: ❌
         ModelClass = self._get_model(model_name)
         query = ModelClass.filter(self._prepare_filters(filters)) if filters else ModelClass.all()
@@ -534,49 +541,47 @@ class SQLDAO(BaseDAO):
             query = query.offset((page - 1) * page_size).limit(page_size)
 
         try:
-            return [obj.to_dict() for obj in await query]
+            return [obj for obj in await query]
         except Exception as e:
             raise DatabaseOperationError(f"Failed to fetch records: {str(e)}")
 
-    async def create(self, model_name: str, record: Dict[str, Any]) -> Dict:  # noqa: D102
+    async def create(self, model_name: str, record: Dict[str, Any]) -> Any:  # noqa: D102
         # TESTED: ❌
         ModelClass = self._get_model(model_name)
         try:
             obj = await ModelClass.create(**record)
-            return obj.to_dict()
+            return obj
         except IntegrityError:
             raise DatabaseOperationError("Failed to create record due to IntegrityError")
         except Exception as e:
             raise DatabaseOperationError(f"Failed to create record: {str(e)}")
 
-    async def update(  # noqa: D102
-        self, model_name: str, _id: int, update: Dict[str, Any]
-    ) -> Dict:
+    async def update(self, model_name: str, _id: int, update: Dict[str, Any]) -> Any:  # noqa: D102
         # TESTED: ❌
         ModelClass = self._get_model(model_name)
         try:
             obj = await ModelClass.get(_id=_id)
             await obj.update_from_dict(update).save()
-            return obj.to_dict()
+            return obj
         except DoesNotExist:
             raise RecordNotFoundError("Record not found")
         except Exception as e:
             raise DatabaseOperationError(f"Failed to update record: {str(e)}")
 
-    async def update_or_create(  # noqa: D102
-        self, model_name: str, defaults: Dict[str, Any], update: Dict[str, Any]
-    ) -> Dict:
-        # TESTED: ❌
-        # TODO:
-        # [ ] Make interface consistent (here as well as in base class)
-        # [ ] Make sure exceptions are being handled with proper type handling (+ base)
+    # async def update_or_create(  # noqa: D102
+    #     self, model_name: str, defaults: Dict[str, Any], update: Dict[str, Any]
+    # ) -> Any:
+    #     # TESTED: ❌
+    #     # TODO:
+    #     # [ ] Make interface consistent (here as well as in base class)
+    #     # [ ] Make sure exceptions are being handled with proper type handling (+ base)
 
-        ModelClass = self._get_model(model_name)
-        try:
-            obj, created = await ModelClass.update_or_create(defaults, update)
-            return obj.to_dict()
-        except Exception as e:
-            raise DatabaseOperationError(f"Failed to update record: {str(e)}")
+    #     ModelClass = self._get_model(model_name)
+    #     try:
+    #         obj, created = await ModelClass.update_or_create(defaults, update)
+    #         return obj
+    #     except Exception as e:
+    #         raise DatabaseOperationError(f"Failed to update record: {str(e)}")
 
     async def delete(self, model_name: str, _id: int) -> None:  # noqa: D102
         # TESTED: ❌
@@ -664,11 +669,10 @@ class SQLDAO(BaseDAO):
         """
         if not re.match(
             r"^[a-zA-Z_][a-zA-Z0-9_]*$", model_name
-        ):  # Simple validation for SQL Injection
+        ):  # Simple validation for SQL Injection. TODO: do better
             raise InvalidQueryError(f"Invalid model name: {model_name}")
-        # Model = None
         try:
-            Model = Tortoise.get_model(self.config.database, model_name)
+            Model = Tortoise.apps[self.config.database][model_name]
         except Exception as e:
             raise InvalidQueryError(f"Error getting model {model_name}: {str(e)}")
         return Model
@@ -690,52 +694,72 @@ class SQLDAO(BaseDAO):
         try:
             if not no_validate:
                 _ = self.validate_filters(filters)
+
+            conditions = []
+            for key, value in filters.items():
+                if key == "$and":
+                    conditions.append(
+                        Q(*[self._prepare_filters(v, no_validate=True) for v in value])
+                    )
+                elif key == "$or":
+                    conditions.append(
+                        Q(
+                            *[self._prepare_filters(v, no_validate=True) for v in value],
+                            join_type="OR",
+                        )
+                    )
+                else:
+                    if isinstance(value, dict):
+                        for op, val in value.items():
+                            if op == "$eq":
+                                conditions.append(Q(**{f"{key}": val}))
+                            elif op == "$ne":
+                                conditions.append(~Q(**{f"{key}": val}))
+                            elif op == "$gt":
+                                conditions.append(Q(**{f"{key}__gt": val}))
+                            elif op == "$gte":
+                                conditions.append(Q(**{f"{key}__gte": val}))
+                            elif op == "$lt":
+                                conditions.append(Q(**{f"{key}__lt": val}))
+                            elif op == "$lte":
+                                conditions.append(Q(**{f"{key}__lte": val}))
+                            elif op == "$in":
+                                conditions.append(Q(**{f"{key}__in": val}))
+                            elif op == "$nin":
+                                conditions.append(Q(**{f"{key}__not_in": val}))
+                    elif isinstance(value, str):
+                        if value.startswith(">="):
+                            conditions.append(
+                                Q(**{f"{key}__gte": str_to_num(value[2:])})  # type: ignore
+                            )
+                        elif value.startswith(">"):
+                            conditions.append(
+                                Q(**{f"{key}__gt": str_to_num(value[1:])})  # type: ignore
+                            )
+                        elif value.startswith("<="):
+                            conditions.append(
+                                Q(**{f"{key}__lte": str_to_num(value[2:])})  # type: ignore
+                            )
+                        elif value.startswith("<"):
+                            conditions.append(
+                                Q(**{f"{key}__lt": str_to_num(value[1:])})  # type: ignore
+                            )
+                        elif value.startswith("!="):
+                            conditions.append(
+                                ~Q(**{f"{key}": str_to_num(value[2:])})  # type: ignore
+                            )
+                        elif value.startswith("="):
+                            conditions.append(
+                                Q(**{f"{key}": str_to_num(value[1:])})  # type: ignore
+                            )
+                        else:
+                            conditions.append(Q(**{f"{key}": value}))
+            return Q(*conditions)
+
         except InvalidQueryError as e:
             raise e
-
-        conditions = []
-        for key, value in filters.items():
-            if key == "$and":
-                conditions.append(Q(*[self._prepare_filters(v, no_validate=True) for v in value]))
-            elif key == "$or":
-                conditions.append(
-                    Q(*[self._prepare_filters(v, no_validate=True) for v in value], join_type="OR")
-                )
-            else:
-                if isinstance(value, dict):
-                    for op, val in value.items():
-                        if op == "$eq":
-                            conditions.append(Q(**{f"{key}__exact": val}))
-                        elif op == "$ne":
-                            conditions.append(~Q(**{f"{key}__exact": val}))
-                        elif op == "$gt":
-                            conditions.append(Q(**{f"{key}__gt": val}))
-                        elif op == "$gte":
-                            conditions.append(Q(**{f"{key}__gte": val}))
-                        elif op == "$lt":
-                            conditions.append(Q(**{f"{key}__lt": val}))
-                        elif op == "$lte":
-                            conditions.append(Q(**{f"{key}__lte": val}))
-                        elif op == "$in":
-                            conditions.append(Q(**{f"{key}__in": val}))
-                        elif op == "$nin":
-                            conditions.append(~Q(**{f"{key}__in": val}))
-                elif isinstance(value, str):
-                    if value.startswith(">="):
-                        conditions.append(Q(**{f"{key}__gte": float(value[2:])}))
-                    elif value.startswith(">"):
-                        conditions.append(Q(**{f"{key}__gt": float(value[1:])}))
-                    elif value.startswith("<="):
-                        conditions.append(Q(**{f"{key}__lte": float(value[2:])}))
-                    elif value.startswith("<"):
-                        conditions.append(Q(**{f"{key}__lt": float(value[1:])}))
-                    elif value.startswith("!="):
-                        conditions.append(~Q(**{f"{key}__exact": float(value[2:])}))
-                    elif value.startswith("="):
-                        conditions.append(Q(**{f"{key}__exact": float(value[1:])}))
-                    else:
-                        conditions.append(Q(**{f"{key}__exact": value}))
-        return Q(*conditions)
+        except ValueError as e:
+            raise InvalidQueryError(str(e))
 
     def _prepare_sorting(
         self, sort: Union[str, Dict[str, int], List[Tuple[str, int]]], no_validate: bool = False
@@ -743,12 +767,21 @@ class SQLDAO(BaseDAO):
         """
         Prepare the sorting for a query.
 
+        Examples:
+            - Input: "field1,field2,-field3"
+              Output: ["field1", "field2", "-field3"]
+            - Input: {"field1": 1, "field2.field3": -1}
+              Output: ["field1", "-field2__field3"]
+            - Input: [("field1", 1), ("field2.field3", -1)]
+              Output: ["field1", "-field2__field3"]
+
         Args:
-            sort: The sorting order.
+            sort: The sorting order. This can be a string, a dict, or a list of tuples.
             no_validate: If True, skip the validation of filters. Defaults to False.
 
         Returns:
-            Query with applied sorting.
+            A list of strings representing the sorting order for a query.
+            Each string is a field name, possibly prefixed with a "-" to indicate descending order.
 
         Raises:
             InvalidQueryError: If sort key is not valid.
@@ -760,14 +793,23 @@ class SQLDAO(BaseDAO):
         except InvalidQueryError as e:
             raise e
 
+        sort_result = []
         if isinstance(sort, str):
             sort_fields = sort.split(",")
-            sort = [field.strip() for field in sort_fields]
+            sort_result = [field.strip().replace(".", "__") for field in sort_fields]
         elif isinstance(sort, dict):
-            sort = [f"-{k}" if v == -1 else k for k, v in sort.items()]
+            sort_result = [
+                f"-{k.replace('.', '__')}" if v == -1 else k.replace(".", "__")
+                for k, v in sort.items()
+            ]
         elif isinstance(sort, list):
-            sort = [f"-{field[0]}" if field[1] == -1 else field[0] for field in sort]
-        return sort
+            sort_result = [
+                f"-{field[0].replace('.', '__')}"
+                if field[1] == -1
+                else field[0].replace(".", "__")
+                for field in sort
+            ]
+        return sort_result
 
 
 class TortoiseDefaultRouter:
@@ -803,3 +845,25 @@ class TortoiseDefaultRouter:
                  In this case, it's 'master'.
         """
         return "master"
+
+
+def str_to_num(str_num: str) -> Union[int, float]:
+    """
+    Convert a string to an integer or a float.
+
+    Args:
+        str_num: A string to convert.
+
+    Returns:
+        The converted number if str_num is a number, otherwise None.
+
+    Raises:
+        ValueError: If str_num is not a number.
+    """
+    try:
+        return int(str_num)
+    except ValueError:
+        try:
+            return float(str_num)
+        except ValueError:
+            raise ValueError(f"The provided string {str_num} is not a number")
