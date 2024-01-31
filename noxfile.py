@@ -11,7 +11,8 @@ python_versions = ["3.8", "3.9", "3.10", "3.11"]
 @session(python=python_versions)
 def tests(session: Session) -> None:
     """Run the test suite."""
-    session.install(".[pgsql]")
+    # session.poetry.installroot(extras=["postgres"])
+    session.install(".[postgres]")
     session.install(
         "invoke", "pytest", "pytest-asyncio", "xdoctest", "coverage[toml]", "pytest-cov", "toml"
     )
@@ -39,7 +40,7 @@ def coverage(session: Session) -> None:
 @session(python=python_versions)
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
-    session.install(".[pgsql]")
+    session.install(".[postgres]")
     session.install("invoke", "mypy", "toml", "types-toml")
     session.run("inv", "mypy")
 

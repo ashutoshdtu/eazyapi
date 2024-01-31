@@ -51,7 +51,7 @@ tortoise-orm = {version = "^0.20.0", optional = true}
 [tool.poetry.extras]
 accel = ["ciso8601", "uvloop", "orjson"]
 mysql = ["tortoise-orm", "asyncmy"]
-pgsql = ["tortoise-orm", "asyncpg"]
+postgres = ["tortoise-orm", "asyncpg"]
 oracle = ["tortoise-orm", "asyncodbc"]
 databases = ["tortoise-orm", "asyncpg", "asyncmy", "asyncodbc"]
 

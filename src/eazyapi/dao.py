@@ -679,7 +679,7 @@ class SQLDAO(BaseDAO):
 
     def _prepare_filters(self, filters: Dict[str, Any], no_validate: bool = False) -> "Q":
         """
-        Recursively apply filters to a query.
+        Recursively prepare filters for a given query.
 
         Args:
             filters: Dictionary of filters to apply.
@@ -855,7 +855,7 @@ def str_to_num(str_num: str) -> Union[int, float]:
         str_num: A string to convert.
 
     Returns:
-        The converted number if str_num is a number, otherwise None.
+        The converted number.
 
     Raises:
         ValueError: If str_num is not a number.
