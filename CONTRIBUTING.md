@@ -31,10 +31,11 @@ We use [`commitizen`](https://commitizen-tools.github.io/) for better commit mes
 pip install --user -U Commitizen
 ```
 
-To install the local development requirements inside a virtual environment run:
+To install the local development requirements inside a virtual environment run (in the root of repo):
 
 ```bash
-$ poetry install
+$ poetry init
+$ poetry install --all-extras
 $ poetry run inv install-hooks
 ```
 
