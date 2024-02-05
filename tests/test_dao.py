@@ -1,5 +1,6 @@
 """Tests for `eazyapi.dao` module."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -274,6 +275,8 @@ def db_uri() -> str:
     # Construct the path to the desired location
     db_name = "testdb.sqlite3"
     tmp_dir = Path(__file__).parent / "tmp"
+    # Ensure the directory exists
+    os.makedirs(tmp_dir, exist_ok=True)
     db_path = tmp_dir / db_name
     db_uri = f"sqlite:///{db_path}"
     return db_uri
@@ -321,11 +324,6 @@ async def test_sqldao_connections_init_and_close(sqldao: SQLDAO) -> None:
 
     # Act
     await sqldao.close()
-
-    # Assert
-    # TODO: Fix the below assertions or investigate why they're not working.
-    # assert sqldao.connections.get('master') is None
-    # assert sqldao.connections.get('slave') is None
 
 
 def test_prepare_sorting_string(sqldao: SQLDAO) -> None:
@@ -425,23 +423,23 @@ def test_get_model_invalid(sqldao: SQLDAO) -> None:
         sqldao._get_model("InvalidModel")
 
 
-# @pytest.mark.asyncio
-# async def test_sqldao_create(sqldao: SQLDAO) -> None:
-#     """Tests the `create` function of the SQLDAO."""
-#     # Arrange
-#     await sqldao.init()
-#     model_name = "SampleModel"
-#     record = {"name": "Test Name"}
+@pytest.mark.asyncio
+async def test_sqldao_create(sqldao: SQLDAO) -> None:
+    """Tests the `create` function of the SQLDAO."""
+    # Arrange
+    await sqldao.init()
+    model_name = "SampleModel"
+    record = {"name": "Test Name"}
 
-#     # Act
-#     created_obj = await sqldao.create(model_name, record)
+    # Act
+    created_obj = await sqldao.create(model_name, record)
 
-#     # Assert
-#     assert created_obj is not None
-#     assert created_obj.name == record["name"]
+    # Assert
+    assert created_obj is not None
+    assert created_obj.name == record["name"]
 
-#     # Clean up
-#     await sqldao.close()
+    # Clean up
+    await sqldao.close()
 
 
 # @pytest.mark.asyncio
@@ -454,38 +452,39 @@ def test_get_model_invalid(sqldao: SQLDAO) -> None:
 #     record2 = {"name": "Test Name 2"}
 #     await sqldao.create(model_name, record1)
 #     await sqldao.create(model_name, record2)
-
+#
 #     # Act
 #     result = await sqldao.get_many(model_name)
-
+#     print(result)
+#
 #     # Assert
 #     assert len(result) == 2
 #     assert result[0].name in [record1["name"], record2["name"]]
 #     assert result[1].name in [record1["name"], record2["name"]]
-
+#
 #     # Clean up
 #     await sqldao.close()
 
 
-# @pytest.mark.asyncio
-# async def test_sqldao_update(sqldao: SQLDAO) -> None:
-#     """Tests the `update` function of the SQLDAO."""
-#     # Arrange
-#     await sqldao.init()
-#     model_name = "SampleModel"
-#     record = {"name": "Test Name"}
-#     new_name = "New Test Name"
-#     created_obj = await sqldao.create(model_name, record)
+@pytest.mark.asyncio
+async def test_sqldao_update(sqldao: SQLDAO) -> None:
+    """Tests the `update` function of the SQLDAO."""
+    # Arrange
+    await sqldao.init()
+    model_name = "SampleModel"
+    record = {"name": "Test Name"}
+    new_name = "New Test Name"
+    created_obj = await sqldao.create(model_name, record)
 
-#     # Act
-#     updated_obj = await sqldao.update(model_name, created_obj._id, {"name": new_name})
+    # Act
+    updated_obj = await sqldao.update(model_name, created_obj._id, {"name": new_name})
 
-#     # Assert
-#     assert updated_obj is not None
-#     assert updated_obj.name == new_name
+    # Assert
+    assert updated_obj is not None
+    assert updated_obj.name == new_name
 
-#     # Clean up
-#     await sqldao.close()
+    # Clean up
+    await sqldao.close()
 
 
 # @pytest.mark.asyncio
@@ -496,13 +495,13 @@ def test_get_model_invalid(sqldao: SQLDAO) -> None:
 #     model_name = "SampleModel"
 #     record = {"name": "Test Name"}
 #     created_obj = await sqldao.create(model_name, record)
-
+#
 #     # Act
 #     await sqldao.delete(model_name, created_obj._id)
 #     deleted_obj = await sqldao.get_by_id(model_name, created_obj._id)
-
+#
 #     # Assert
 #     assert deleted_obj is None
-
+#
 #     # Clean up
 #     await sqldao.close()
