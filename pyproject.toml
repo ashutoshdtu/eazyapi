@@ -63,7 +63,7 @@ commitizen = "^3.13.0"
 watchdog = {version = "^3.0.0", extras = ["watchmedo"]}
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.4.3"
+pytest = "^8.0.1"
 pytest-asyncio = "^0.23.3"
 xdoctest = "^1.1.2"
 coverage = {version = "^7.3.2", extras = ["toml"]}
