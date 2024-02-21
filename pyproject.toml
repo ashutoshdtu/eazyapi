@@ -66,7 +66,7 @@ watchdog = {version = "^3.0.0", extras = ["watchmedo"]}
 pytest = "^7.4.3"
 pytest-asyncio = "^0.23.3"
 xdoctest = "^1.1.2"
-coverage = {version = "^7.3.2", extras = ["toml"]}
+coverage = {version = "^7.4.2", extras = ["toml"]}
 pytest-cov = "^4.1.0"
 toml = "^0.10.2"
 types-toml = "^0.10.8.7"
